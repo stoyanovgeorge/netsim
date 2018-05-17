@@ -1,4 +1,4 @@
-# Network impairments simulator
+# Network Impairments Simulator
 
 ### Introduction
 
