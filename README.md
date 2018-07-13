@@ -65,7 +65,10 @@ I was thinking to create a simple web Interface and even a docker container whic
 
 ### Bugs and Missing Features
 
-Please use Github Issues in case you spot a bug or have an idea how to optimize the scripts.
+In Ubuntu 18.04 the generation of the jitter doesn't seem to work properly. For some reason it is creating delay in some packets for more than 4 seconds and also if you define delay 200ms and jitt
+er 100ms the RTT is always greater than 200ms, instead of varying between 100ms and 300ms. I think in Ubuntu 16.04 the jitter is working properly, but you have to check for yourself.
+
+For additional bugs, please use Github Issues in case you spot a bug or have an idea how to optimize the scripts.
 
 ### External Links
 
