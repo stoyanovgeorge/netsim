@@ -55,6 +55,8 @@ Packet Loss:            10%
 ```
 I have created couple of checks so that the script won't accept invalid network port or packet loss higher than 100%. 
 
+The second script in the directory, `random_netsim.sh` is actually applying a random packet loss, jitter and time delay between 0 and user defined thresholds defined by the user. It is very similar to `netsim.sh` and the idea is to run for a longer period of time simulating different randomly generated network impairments. 
+
 ### Similar Software
 
 This script is similar to [WANEM](http://wanem.sourceforge.net/) but more limited in functionality, since it is supporting only packet loss, jitter and time delay. On the other hand I found that WANEM is not working properly on newer hardware.

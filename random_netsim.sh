@@ -48,31 +48,31 @@ user_input (){
 
 	# Time Delay Setup
 
-	echo "Please define the time delay in [ms]:"
-	read -r delay
-	while ! [[ "$delay" =~ ^[0-9]+$ && "$delay" -ge 0 ]]; do
-		echo "Please enter a valid numerical time delay value in [ms]:"
-		read -r delay
+	echo "Please define the maximum time delay in [ms]:"
+	read -r max_delay
+	while ! [[ "$max_delay" =~ ^[0-9]+$ && "$max_delay" -ge 0 ]]; do
+		echo "Please enter a valid numerical maximum time delay value in [ms]:"
+		read -r max_delay
 	done
 
 	# Jitter Setup
 
-	echo "Please define the jitter in [ms]:"
-	read -r jitter
+	echo "Please define the maximum jitter in [ms]:"
+	read -r max_jitter
 
-	while ! [[ "$jitter" =~ ^[0-9]+$ && "$jitter" -ge '0' ]]; do
-		echo "Please enter only a valid integer value for the jitter greater than 0ms:"
-		read -r jitter
+	while ! [[ "$max_jitter" =~ ^[0-9]+$ && "$max_jitter" -ge '0' ]]; do
+		echo "Please enter only a valid integer value for the maximum jitter greater or equal to 0ms:"
+		read -r max_jitter
 	done
 
 	# Packet Loss Setup
 
-	echo "Please define the packet loss in [%]:"
-	read -r ploss
+	echo "Please define the maximum packet loss in [%]:"
+	read -r max_ploss
 
-	while ! [[ "$ploss" =~ ^[0-9]+$ && "$ploss" -lt '100' && "$ploss" -ge '0' ]]; do
+	while ! [[ "$max_ploss" =~ ^[0-9]+$ && "$max_ploss" -lt '100' && "$max_ploss" -ge '0' ]]; do
 		echo "Please enter a valid packet loss value in [%], between 0% and 100%:"
-		read -r ploss
+		read -r max_ploss
 	done
 }
 
@@ -89,23 +89,37 @@ confirmation (){
 esac
 }
 
-
 print_settings (){
 
 	printf "\nThese are the set parameters:\n\n"
-	printf "Network interface:\t%s\n" "${user_iface}"
-	printf "Delay:\t\t\t%sms\n" "${delay}"
-	printf "Jitter:\t\t\t%sms\n" "${jitter}"
-	printf "Packet Loss:\t\t${ploss}%%\n\n"
+	printf "Selected Network interface:\t%s\n" "${user_iface}"
+	printf "Maximum Delay:\t\t\t%sms\n" "${max_delay}"
+	printf "Maximum Jitter:\t\t\t%sms\n" "${max_jitter}"
+	printf "Maximum Packet Loss:\t\t${max_ploss}%%\n\n"
+}
+
+randgen () {
+	if [[ $1 == 0 ]];then
+		echo 0
+	else
+		echo "$((RANDOM % (("$1") + 1)))"
+	fi
 }
 
 netemu (){
-	if [[ "$ploss" == 0 ]]; then
-		sudo tc qdisc add dev "$user_iface" root netem delay "$delay"ms "$jitter"ms
+	rand_delay="$(randgen "$max_delay")"
+	rand_jitter="$(randgen "$max_jitter")"
+	rand_ploss="$(randgen "$max_ploss")"
+	if [[ "$rand_ploss" == 0 ]]; then
+		sudo tc qdisc add dev "$user_iface" root netem delay "$rand_delay"ms "$rand_jitter"ms
+		printf "Network interface: %s will be delayed with %sms and the jitter will be %sms.\n" "$user_iface" "$rand_delay" "$rand_jitter"
 	else
-		sudo tc qdisc add dev "$user_iface" root netem delay "$delay"ms "$jitter"ms loss "$ploss"% 
+		sudo tc qdisc add dev "$user_iface" root netem delay "$rand_delay"ms "$rand_jitter"ms loss "$rand_ploss"%
+		printf "Network interface: %s will be affected by %d%% packet loss, the RTT will be %dms and the jitter %dms.\n" "$user_iface" "$rand_ploss" "$rand_delay" "$rand_jitter"	
 	fi
 }
+
+
 
 network_array
 kill_all
