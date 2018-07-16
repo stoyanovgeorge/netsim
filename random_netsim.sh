@@ -2,7 +2,7 @@
 
 
 # Simulate network delay
-printf "Welcome to the network simulator:\n\n"
+printf "Welcome to the random network simulator:\n\n"
 
 kill_all (){
 	# Clearing the netem configuration
@@ -45,6 +45,17 @@ user_input (){
         	echo "Please enter a valid network interface:"
 	        read -r user_iface
 	done
+
+	# Maximum interval duation
+
+	printf "\nPlease define the maximum time intervals you want to use in seconds:\n"
+        read -r time_int
+
+	while ! [[ "$time_int" =~ ^[0-9]+$ && "$time_int" -gt 0 ]]; do
+                echo "Please enter a valid numerical maximum time interval in [s]:"
+                read -r time_int
+        done
+
 
 	# Time Delay Setup
 
@@ -93,6 +104,7 @@ print_settings (){
 
 	printf "\nThese are the set parameters:\n\n"
 	printf "Selected Network interface:\t%s\n" "${user_iface}"
+	printf "Maximum Time Interval:\t\t%ss\n" "${time_int}"
 	printf "Maximum Delay:\t\t\t%sms\n" "${max_delay}"
 	printf "Maximum Jitter:\t\t\t%sms\n" "${max_jitter}"
 	printf "Maximum Packet Loss:\t\t${max_ploss}%%\n\n"
@@ -107,19 +119,29 @@ randgen () {
 }
 
 netemu (){
+	rand_int="$(randgen "$time_int")"
 	rand_delay="$(randgen "$max_delay")"
 	rand_jitter="$(randgen "$max_jitter")"
 	rand_ploss="$(randgen "$max_ploss")"
 	if [[ "$rand_ploss" == 0 ]]; then
 		sudo tc qdisc add dev "$user_iface" root netem delay "$rand_delay"ms "$rand_jitter"ms
-		printf "Network interface: %s will be delayed with %sms and the jitter will be %sms.\n" "$user_iface" "$rand_delay" "$rand_jitter"
+		printf "Network interface: %s will be delayed with %sms and the jitter will be %sms for %s seconds.\n" "$user_iface" "$rand_delay" "$rand_jitter" "$rand_int"
 	else
 		sudo tc qdisc add dev "$user_iface" root netem delay "$rand_delay"ms "$rand_jitter"ms loss "$rand_ploss"%
-		printf "Network interface: %s will be affected by %d%% packet loss, the RTT will be %dms and the jitter %dms.\n" "$user_iface" "$rand_ploss" "$rand_delay" "$rand_jitter"	
+		printf "Network interface: %s will be affected by %d%% packet loss, the RTT will be %dms and the jitter %dms for %s seconds.\n" "$user_iface" "$rand_ploss" "$rand_delay" "$rand_jitter" "$rand_int"
 	fi
 }
 
-
+rand_netsim() {
+	while :
+	do
+		kill_all
+		netemu
+		sleep "$rand_int"
+		kill_all
+		sleep "$rand_int"
+	done
+}
 
 network_array
 kill_all
@@ -127,4 +149,4 @@ user_input
 print_settings
 confirmation
 print_settings
-netemu
+rand_netsim
